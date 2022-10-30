@@ -1,27 +1,27 @@
-package searchcomment
+package response
 
 import (
 	"context"
-	"github.com/core-go/search"
 	"net/http"
 	"reflect"
+	"github.com/core-go/search"
 )
 
-type SearchCommentHandler interface {
+type SearchResponseHandler interface {
 	Search(w http.ResponseWriter, r *http.Request)
 }
 
-func NewSearchCommentHandler(
+func NewSearchResponseHandler(
 	find func(context.Context, interface{}, interface{}, int64, ...int64) (int64, string, error),
 	logError func(context.Context, string, ...map[string]interface{}),
-) SearchCommentHandler {
-	searchModelType := reflect.TypeOf(CommentFilter{})
-	modelType := reflect.TypeOf(Comment{})
+) SearchResponseHandler {
+	searchModelType := reflect.TypeOf(ResponseFilter{})
+	modelType := reflect.TypeOf(Response{})
 	var writeLog func(context.Context, string, string, bool, string) error
 	searchHandler := search.NewSearchHandler(find, modelType, searchModelType, logError, writeLog)
-	return &searchCommentHandler{SearchHandler: searchHandler}
+	return &searchResponseHandler{SearchHandler: searchHandler}
 }
 
-type searchCommentHandler struct {
+type searchResponseHandler struct {
 	*search.SearchHandler
 }

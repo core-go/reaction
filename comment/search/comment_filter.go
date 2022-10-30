@@ -1,4 +1,4 @@
-package searchcomment
+package search
 
 import (
 	"github.com/core-go/search"

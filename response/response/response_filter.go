@@ -1,4 +1,4 @@
-package searchresponse
+package response
 
 import (
 	"github.com/core-go/search"

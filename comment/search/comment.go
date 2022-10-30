@@ -1,4 +1,4 @@
-package searchcomment
+package search
 
 import (
 	"database/sql/driver"
