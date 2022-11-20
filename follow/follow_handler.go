@@ -1,55 +1,89 @@
 package follow
 
 import (
-	"context"
+	"encoding/json"
 	"net/http"
-	"reflect"
-
-	sv "github.com/core-go/core"
-
+	"strings"
 )
 
-type FollowHandler interface {
-	Check(w http.ResponseWriter, r *http.Request)
-	Follow(w http.ResponseWriter, r *http.Request)
-	UnFollow(w http.ResponseWriter, r *http.Request)
+func NewFollowHandler(service FollowService, targetIndex int, idIndex int) FollowHandler {
+	return FollowHandler{service: service, idIndex: idIndex, targetIndex: targetIndex}
 }
 
-func NewFollowHandler(service FollowService, status sv.StatusConfig, logError func(context.Context, string, ...map[string]interface{}), validate func(ctx context.Context, model interface{}) ([]sv.ErrorMessage, error), action *sv.ActionConfig) FollowHandler {
-	modelType := reflect.TypeOf(Follower{})
-	params := sv.CreateParams(modelType, &status, logError, validate, action)
-	return &followHandler{service: service, Params: params}
+type FollowHandler struct {
+	service     FollowService
+	targetIndex int
+	idIndex     int
 }
 
-type followHandler struct {
-	service FollowService
-	*sv.Params
-}
-
-func (h *followHandler) Follow(w http.ResponseWriter, r *http.Request) {
+func (h *FollowHandler) Follow(w http.ResponseWriter, r *http.Request) {
 	var follower Follower
-	follower.Follower = sv.GetRequiredParam(w, r)
-	follower.Id = sv.GetRequiredParam(w, r, 1)
+	follower.Follower = GetRequiredParam(w, r, h.targetIndex)
+	follower.Id = GetRequiredParam(w, r, h.idIndex)
 	if len(follower.Id) > 0 && len(follower.Follower) > 0 {
 		result, err := h.service.Follow(r.Context(), follower.Id, follower.Follower)
-		sv.AfterCreated(w, r, &follower, result, err, h.Status, h.Error, h.Log, h.Resource, h.Action.Create)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(result)
+		return
 	}
+
 }
 
-func (h *followHandler) UnFollow(w http.ResponseWriter, r *http.Request) {
-	target := sv.GetRequiredParam(w, r)
-	id := sv.GetRequiredParam(w, r, 1)
+func (h *FollowHandler) UnFollow(w http.ResponseWriter, r *http.Request) {
+	target := GetRequiredParam(w, r, h.targetIndex)
+	id := GetRequiredParam(w, r, h.idIndex)
 	if len(id) > 0 && len(target) > 0 {
 		result, err := h.service.UnFollow(r.Context(), id, target)
-		sv.HandleDelete(w, r, result, err, h.Error, h.Log, h.Resource, h.Action.Delete)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(result)
+		return
 	}
 }
 
-func (h *followHandler) Check(w http.ResponseWriter, r *http.Request) {
-	target := sv.GetRequiredParam(w, r)
-	id := sv.GetRequiredParam(w, r, 1)
+func (h *FollowHandler) Check(w http.ResponseWriter, r *http.Request) {
+	target := GetRequiredParam(w, r, h.targetIndex)
+	id := GetRequiredParam(w, r, h.idIndex)
 	if len(id) > 0 && len(target) > 0 {
 		result, err := h.service.CheckFollow(r.Context(), id, target)
-		sv.RespondModel(w, r, result, err, h.Error, nil)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(result)
+		return
 	}
+}
+func GetParam(r *http.Request, options ...int) string {
+	offset := 0
+	if len(options) > 0 && options[0] > 0 {
+		offset = options[0]
+	}
+	s := r.URL.Path
+	params := strings.Split(s, "/")
+	i := len(params) - 1 - offset
+	if i >= 0 {
+		return params[i]
+	} else {
+		return ""
+	}
+}
+func GetRequiredParam(w http.ResponseWriter, r *http.Request, options ...int) string {
+	p := GetParam(r, options...)
+	if len(p) == 0 {
+		http.Error(w, "parameter is required", http.StatusBadRequest)
+		return ""
+	}
+	return p
 }

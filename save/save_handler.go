@@ -1,52 +1,89 @@
 package save
 
 import (
-	"context"
+	"encoding/json"
 	"net/http"
-	"reflect"
-
-	sv "github.com/core-go/core"
+	"strings"
 )
 
-type SaveHandler interface {
-	Load(w http.ResponseWriter, r *http.Request)
-	Save(w http.ResponseWriter, r *http.Request)
-	Remove(w http.ResponseWriter, r *http.Request)
+func NewSaveHandler(service SaveService, itemIndex int, idIndex int) SaveHandler {
+	return SaveHandler{service: service, itemIndex: itemIndex, idIndex: idIndex}
 }
 
-func NewSaveHandler(service SaveService, status sv.StatusConfig, logError func(context.Context, string, ...map[string]interface{}), validate func(ctx context.Context, model interface{}) ([]sv.ErrorMessage, error), action *sv.ActionConfig) SaveHandler {
-	modelType := reflect.TypeOf(Save{})
-	params := sv.CreateParams(modelType, &status, logError, validate, action)
-	return &saveHandler{service: service, Params: params}
-}
-
-type saveHandler struct {
+type SaveHandler struct {
 	service SaveService
-	*sv.Params
+	itemIndex int
+	idIndex int
 }
 
-func (h *saveHandler) Save(w http.ResponseWriter, r *http.Request) {
-	item := sv.GetRequiredParam(w, r)
-	id := sv.GetRequiredParam(w, r, 1)
+func (h *SaveHandler) Save(w http.ResponseWriter, r *http.Request) {
+	item := GetRequiredParam(w, r, h.itemIndex) // 0
+	id := GetRequiredParam(w, r, h.idIndex) // 1
 	if len(id) > 0 && len(item) > 0 {
 		result, err := h.service.Save(r.Context(), id, item)
-		sv.AfterCreated(w, r, nil, result, err, h.Status, h.Error, h.Log, h.Resource, h.Action.Create)
+		if err != nil {
+			http.Error(w,err.Error(),500)
+		return;
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(result)
+		return;
 	}
 }
 
-func (h *saveHandler) Remove(w http.ResponseWriter, r *http.Request) {
-	item := sv.GetRequiredParam(w, r)
-	id := sv.GetRequiredParam(w, r, 1)
+func (h *SaveHandler) Remove(w http.ResponseWriter, r *http.Request) {
+	item := GetRequiredParam(w, r,h.itemIndex) // 0
+	id := GetRequiredParam(w, r, h.idIndex) // 1
 	if len(id) > 0 && len(item) > 0 {
 		result, err := h.service.Remove(r.Context(), id, item)
-		sv.HandleDelete(w, r, result, err, h.Error, h.Log, h.Resource, h.Action.Delete)
+		if err != nil {
+			http.Error(w,err.Error(),500)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(result)
+		return
 	}
 }
 
-func (h *saveHandler) Load(w http.ResponseWriter, r *http.Request) {
-	id := sv.GetRequiredParam(w, r)
+func (h *SaveHandler) Load(w http.ResponseWriter, r *http.Request) {
+	id := GetRequiredParam(w, r)
 	if len(id) > 0 {
 		result, err := h.service.Load(r.Context(), id)
-		sv.RespondModel(w, r, result, err, h.Error, nil)
+		if err != nil {
+			http.Error(w,err.Error(),http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(result)
+		return
+	}
+}
+
+func GetRequiredParam(w http.ResponseWriter,r *http.Request, options ...int) string {
+	p := GetParam(r, options...)
+	if len(p) == 0 {
+		http.Error(w, "parameter is required", http.StatusBadRequest)
+		return ""
+	}
+	return p
+}
+func GetParam(r *http.Request, options... int) string {
+	offset := 0
+	if len(options) > 0 && options[0] > 0 {
+		offset = options[0]
+	}
+	s := r.URL.Path
+	params := strings.Split(s, "/")
+	i := len(params)-1-offset
+	if i >= 0 {
+		return params[i]
+	} else {
+		return ""
 	}
 }
