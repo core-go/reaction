@@ -1,4 +1,4 @@
-package userreaction
+package user_reaction
 
 type UserReaction struct {
 	Id       string `json:"id,omitempty" gorm:"column:id,primary_key"`

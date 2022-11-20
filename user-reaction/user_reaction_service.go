@@ -1,4 +1,4 @@
-package userreaction
+package user_reaction
 
 import (
 	"context"
