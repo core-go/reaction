@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/core-go/reaction/comment"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/core-go/reaction/comment"
 )
 
 func NewCommentHandler(
