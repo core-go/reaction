@@ -29,10 +29,14 @@ func NewCommentService(
 	rateIdCol string,
 	rateAuthorCol string,
 	commentCountCol string,
+	userTable string,
+	userIdUserCol string,
+	imageUrlUserCol string,
+	UsernameUserCol string,
 	toArray func(interface{}) interface {
-		driver.Valuer
-		sql.Scanner
-	},
+	driver.Valuer
+	sql.Scanner
+},
 ) CommentService {
 	return &commentService{
 		DB:              db,
@@ -48,7 +52,11 @@ func NewCommentService(
 		RateIdCol:       rateIdCol,
 		RateAuthorCol:   rateAuthorCol,
 		CommentCountCol: commentCountCol,
+		userTable:       userTable,
+		imageUrlUserCol: imageUrlUserCol,
+		userIdUserCol:   userIdUserCol,
 		ToArray:         toArray,
+		UsernameUserCol: UsernameUserCol,
 	}
 }
 
@@ -66,6 +74,10 @@ type commentService struct {
 	RateIdCol       string
 	RateAuthorCol   string
 	CommentCountCol string
+	userTable       string
+	userIdUserCol   string
+	imageUrlUserCol string
+	UsernameUserCol string
 	ToArray         func(interface{}) interface {
 		driver.Valuer
 		sql.Scanner
@@ -75,8 +87,8 @@ type commentService struct {
 func (s *commentService) Load(ctx context.Context, id string, author string) ([]*Comment, error) {
 	var comments []*Comment
 	query := fmt.Sprintf(
-		"select %s, %s, %s, %s, %s, %s, %s, histories from %s where %s = $1 and %s = $2",
-		s.CommentIdCol, s.IdCol, s.AuthorCol, s.UserIdCol, s.CommentCol, s.TimeCol, s.UpdatedAtCol, s.CommentTable, s.IdCol, s.AuthorCol)
+		"select s.%s, s.%s, s.%s, s.%s, s.%s, s.%s, s.%s, s.histories, u.%s, u.%s from %s s join %s u on u.%s = s.%s  where s.%s = $1 and s.%s = $2",
+		s.CommentIdCol, s.IdCol, s.AuthorCol, s.UserIdCol, s.CommentCol, s.TimeCol, s.UpdatedAtCol, s.imageUrlUserCol, s.UsernameUserCol, s.CommentTable, s.userTable, s.userIdUserCol, s.UserIdCol, s.IdCol, s.AuthorCol)
 	fmt.Println(query)
 	rows, err := s.DB.QueryContext(ctx, query, id, author)
 	if err != nil {
@@ -85,7 +97,7 @@ func (s *commentService) Load(ctx context.Context, id string, author string) ([]
 	defer rows.Close()
 	for rows.Next() {
 		var comment Comment
-		err = rows.Scan(&comment.CommentId, &comment.Id, &comment.Author, &comment.UserId, &comment.Comment, &comment.Time, &comment.UpdatedAt, s.ToArray(&comment.Histories))
+		err = rows.Scan(&comment.CommentId, &comment.Id, &comment.Author, &comment.UserId, &comment.Comment, &comment.Time, &comment.UpdatedAt, s.ToArray(&comment.Histories), &comment.UserURL, &comment.Username)
 		if err != nil {
 			return nil, err
 		}

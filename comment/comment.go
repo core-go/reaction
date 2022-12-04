@@ -16,6 +16,8 @@ type Comment struct {
 	Time      *time.Time  `json:"time,omitempty" gorm:"column:time" bson:"time,omitempty" dynamodbav:"time,omitempty" firestore:"time,omitempty"`
 	UpdatedAt *time.Time  `json:"updateAt,omitempty" gorm:"column:updateAt" bson:"updateAt,omitempty" dynamodbav:"updateAt,omitempty" firestore:"updateAt,omitempty"`
 	Histories []Histories `json:"histories,omitempty" gorm:"column:histories" bson:"histories,omitempty" dynamodbav:"histories,omitempty" firestore:"histories,omitempty"`
+	UserURL   *string     `json:"userURL,omitempty" gorm:"column:imageurl"`
+	Username  *string     `json:"authorName,omitempty" gorm:"column:username"`
 }
 
 type Histories struct {
