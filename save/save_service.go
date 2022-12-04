@@ -24,9 +24,9 @@ func NewSaveService(
 	targetTable string,
 	idTargetCol string,
 	toArray func(interface{}) interface {
-		driver.Valuer
-		sql.Scanner
-	},
+	driver.Valuer
+	sql.Scanner
+},
 
 ) SaveService {
 	return &saveService{
@@ -117,7 +117,7 @@ func (s *saveService) Save(ctx context.Context, id string, item string) (int64, 
 		}
 	}
 
-	if len(items) == 0 {
+	if items == nil {
 		query := fmt.Sprintf("insert into %s(%s, %s) values ($1, $2)", s.table, s.idCol, s.itemCol)
 		stmt, er0 := s.DB.Prepare(query)
 		if er0 != nil {
@@ -171,7 +171,7 @@ func (s *saveService) Remove(ctx context.Context, id string, item string) (int64
 	if items == nil {
 		return 0, nil
 	}
-	var newItems []string
+	newItems := []string{}
 	for i := 0; i < len(items[0].Items); i++ {
 		if items[0].Items[i] != item {
 			newItems = append(newItems, items[0].Items[i])
