@@ -6,16 +6,16 @@ import (
 	"errors"
 )
 
-type Save struct {
-	Id   string   `json:"id,omitempty" gorm:"column:id;primary_key" bson:"id,omitempty" dynamodbav:"id,omitempty" firestore:"id,omitempty" validate:"required,max=255"`
-	Item []string `json:"item,omitempty" gorm:"column:item" bson:"item,omitempty" dynamodbav:"item,omitempty" firestore:"item,omitempty" validate:"required"`
+type Items struct {
+	Id    string   `json:"id,omitempty" gorm:"column:id;primary_key" bson:"id,omitempty" dynamodbav:"id,omitempty" firestore:"id,omitempty" validate:"required,max=255" match:"equal"`
+	Items []string `json:"items,omitempty" gorm:"column:items" bson:"items,omitempty" dynamodbav:"items,omitempty" firestore:"items,omitempty" validate:"required"`
 }
 
-func (c Save) Value() (driver.Value, error) {
+func (c Items) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
 
-func (c *Save) Scan(value interface{}) error {
+func (c *Items) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")
