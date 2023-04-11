@@ -244,4 +244,5 @@ func (s *commentThreadService) Comment(ctx context.Context, comment CommentThrea
 		return -1, err
 	}
 	return res.RowsAffected()
+
 }

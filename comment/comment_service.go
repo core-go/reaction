@@ -15,29 +15,10 @@ type CommentService interface {
 	Delete(ctx context.Context, commentId string, id string, author string) (int64, error)
 }
 
-func NewCommentService(
-	db *sql.DB,
-	commentTable string,
-	commentIdCol string,
-	idCol string,
-	authorCol string,
-	userIdCol string,
-	commentCol string,
-	timeCol string,
-	updatedAtCol string,
-	rateTable string,
-	rateIdCol string,
-	rateAuthorCol string,
-	commentCountCol string,
-	userTable string,
-	userIdUserCol string,
-	imageUrlUserCol string,
-	UsernameUserCol string,
-	toArray func(interface{}) interface {
+func NewCommentService(db *sql.DB, commentTable string, commentIdCol string, idCol string, authorCol string, userIdCol string, commentCol string, anonymousCol string, timeCol string, updatedAtCol string, rateTable string, rateIdCol string, rateAuthorCol string, commentCountCol string, userTable string, userIdUserCol string, imageUrlUserCol string, UsernameUserCol string, queryInfo func(ids []string) ([]Info, error), toArray func(interface{}) interface {
 	driver.Valuer
 	sql.Scanner
-},
-) CommentService {
+}) CommentService {
 	return &commentService{
 		DB:              db,
 		CommentTable:    commentTable,
@@ -46,6 +27,7 @@ func NewCommentService(
 		AuthorCol:       authorCol,
 		UserIdCol:       userIdCol,
 		CommentCol:      commentCol,
+		AnonymousCol:    anonymousCol,
 		TimeCol:         timeCol,
 		UpdatedAtCol:    updatedAtCol,
 		RateTable:       rateTable,
@@ -56,6 +38,7 @@ func NewCommentService(
 		imageUrlUserCol: imageUrlUserCol,
 		userIdUserCol:   userIdUserCol,
 		ToArray:         toArray,
+		QueryInfo:       queryInfo,
 		UsernameUserCol: UsernameUserCol,
 	}
 }
@@ -73,11 +56,13 @@ type commentService struct {
 	RateTable       string
 	RateIdCol       string
 	RateAuthorCol   string
+	AnonymousCol    string
 	CommentCountCol string
 	userTable       string
 	userIdUserCol   string
 	imageUrlUserCol string
 	UsernameUserCol string
+	QueryInfo       func(ids []string) ([]Info, error)
 	ToArray         func(interface{}) interface {
 		driver.Valuer
 		sql.Scanner
@@ -87,9 +72,8 @@ type commentService struct {
 func (s *commentService) Load(ctx context.Context, id string, author string) ([]*Comment, error) {
 	var comments []*Comment
 	query := fmt.Sprintf(
-		"select s.%s, s.%s, s.%s, s.%s, s.%s, s.%s, s.%s, s.histories, u.%s, u.%s from %s s join %s u on u.%s = s.%s  where s.%s = $1 and s.%s = $2",
-		s.CommentIdCol, s.IdCol, s.AuthorCol, s.UserIdCol, s.CommentCol, s.TimeCol, s.UpdatedAtCol, s.imageUrlUserCol, s.UsernameUserCol, s.CommentTable, s.userTable, s.userIdUserCol, s.UserIdCol, s.IdCol, s.AuthorCol)
-	fmt.Println(query)
+		"select s.%s, s.%s, s.%s, s.%s, s.%s, s.%s, s.%s, s.%s, s.histories from %s s where s.%s = $1 and s.%s = $2",
+		s.CommentIdCol, s.IdCol, s.AuthorCol, s.UserIdCol, s.CommentCol, s.AnonymousCol, s.TimeCol, s.UpdatedAtCol, s.CommentTable, s.IdCol, s.AuthorCol)
 	rows, err := s.DB.QueryContext(ctx, query, id, author)
 	if err != nil {
 		return nil, err
@@ -97,25 +81,51 @@ func (s *commentService) Load(ctx context.Context, id string, author string) ([]
 	defer rows.Close()
 	for rows.Next() {
 		var comment Comment
-		err = rows.Scan(&comment.CommentId, &comment.Id, &comment.Author, &comment.UserId, &comment.Comment, &comment.Time, &comment.UpdatedAt, s.ToArray(&comment.Histories), &comment.UserURL, &comment.Username)
+		err = rows.Scan(&comment.CommentId, &comment.Id, &comment.Author, &comment.UserId, &comment.Comment, &comment.Anonymous, &comment.Time, &comment.UpdatedAt, s.ToArray(&comment.Histories))
 		if err != nil {
 			return nil, err
 		}
 		comments = append(comments, &comment)
+	}
+	if len(comments) == 0 {
+		return comments, nil
+	}
+	ids := make([]string, 0)
+	for _, r := range comments {
+		ids = append(ids, r.Author)
+	}
+	if s.QueryInfo == nil {
+		return comments, nil
+	}
+	infos, err := s.QueryInfo(ids)
+	if err != nil {
+		return nil, err
+	}
+	for k, _ := range comments {
+		c := comments[k]
+		i := BinarySearch(infos, c.Author)
+		if i >= 0 && !c.Anonymous {
+			comments[k].AuthorURL = &infos[i].Url
+			if infos[i].DisplayName != nil {
+				comments[k].AuthorName = infos[i].DisplayName
+			} else {
+				comments[k].AuthorName = &infos[i].Name
+			}
+		}
 	}
 	return comments, nil
 }
 
 func (s *commentService) Create(ctx context.Context, comment *Comment) (int64, error) {
 	query1 := fmt.Sprintf(
-		"insert into %s(%s, %s, %s, %s, %s, %s) values ($1, $2, $3, $4, $5, $6)",
-		s.CommentTable, s.CommentIdCol, s.IdCol, s.AuthorCol, s.UserIdCol, s.CommentCol, s.TimeCol)
+		"insert into %s(%s, %s, %s, %s, %s, %s, %s) values ($1, $2, $3, $4, $5, $6, $7)",
+		s.CommentTable, s.CommentIdCol, s.IdCol, s.AuthorCol, s.UserIdCol, s.CommentCol, s.AnonymousCol, s.TimeCol)
 	fmt.Println(query1)
 	stmt1, err := s.DB.Prepare(query1)
 	if err != nil {
 		return -1, err
 	}
-	res1, err := stmt1.ExecContext(ctx, comment.CommentId, comment.Id, comment.Author, comment.UserId, comment.Comment, comment.Time)
+	res1, err := stmt1.ExecContext(ctx, comment.CommentId, comment.Id, comment.Author, comment.UserId, comment.Comment, comment.Anonymous, comment.Time)
 	if err != nil {
 		return -1, err
 	}
@@ -139,7 +149,10 @@ func (s *commentService) Update(ctx context.Context, comment *Comment) (int64, e
 	fmt.Println(query1)
 	rows, _ := s.DB.QueryContext(ctx, query1, comment.CommentId)
 	for rows.Next() {
-		rows.Scan(&oldComment.Time, &oldComment.UpdatedAt, &oldComment.Comment, s.ToArray(&oldComment.Histories))
+		err := rows.Scan(&oldComment.Time, &oldComment.UpdatedAt, &oldComment.Comment, s.ToArray(&oldComment.Histories))
+		if err != nil {
+			return 0, err
+		}
 	}
 	rows.Close()
 

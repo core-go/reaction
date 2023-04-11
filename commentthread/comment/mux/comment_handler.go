@@ -3,14 +3,13 @@ package mux
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-
-	sv "github.com/core-go/reaction/comment-thread/comment"
+	comment "github.com/core-go/reaction/comment-thread/comment"
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 type CommentHandler struct {
-	service              sv.CommentService
+	service              comment.CommentService
 	commentThreadIdField string
 	userIdField          string
 	authorField          string
@@ -19,7 +18,7 @@ type CommentHandler struct {
 	GenerateId           func(context.Context) (string, error)
 }
 
-func NewCommentHandler(service sv.CommentService,
+func NewCommentHandler(service comment.CommentService,
 	commentThreadIdField string,
 	userIdField string,
 	authorField string,
@@ -37,7 +36,7 @@ func NewCommentHandler(service sv.CommentService,
 	}
 }
 
-func (h *CommentHandler) GetComments(w http.ResponseWriter, r *http.Request) {
+func (h *CommentHandler) GetReplyComments(w http.ResponseWriter, r *http.Request) {
 	obj := make(map[string]string)
 	commentThreadId := mux.Vars(r)[h.commentThreadIdField]
 	err := Decode(w, r, &obj)
@@ -56,7 +55,7 @@ func (h *CommentHandler) GetComments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CommentHandler) Reply(w http.ResponseWriter, r *http.Request) {
-	var obj sv.Comment
+	var obj comment.Comment
 	commentThreadId := mux.Vars(r)[h.commentThreadIdField]
 	author := mux.Vars(r)[h.authorField]
 	id := mux.Vars(r)[h.idField]
@@ -81,6 +80,30 @@ func (h *CommentHandler) Reply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res, err := h.service.Create(r.Context(), obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if res <= 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode("")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(obj.CommentId)
+}
+
+func (h *CommentHandler) UpdateReply(w http.ResponseWriter, r *http.Request) {
+	var obj comment.Comment
+	commentId := mux.Vars(r)[h.commentIdField]
+	err := Decode(w, r, &obj)
+	if err != nil {
+		return
+	}
+	obj.CommentId = commentId
+	res, err := h.service.Update(r.Context(), obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

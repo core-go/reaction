@@ -17,6 +17,7 @@ func NewRateService(
 	rateTable string,
 	idCol string,
 	authorCol string,
+	anonymousCol string,
 	rateCol string,
 	reviewCol string,
 	timeCol string,
@@ -37,6 +38,7 @@ func NewRateService(
 		RateTable:      rateTable,
 		IdCol:          idCol,
 		AuthorCol:      authorCol,
+		AnonymousCol:   anonymousCol,
 		RateCol:        rateCol,
 		ReviewCol:      reviewCol,
 		TimeCol:        timeCol,
@@ -52,12 +54,14 @@ func NewRateService(
 }
 
 type rateService struct {
-	DB             *sql.DB
-	RateTable      string
-	IdCol          string
-	AuthorCol      string
-	RateCol        string
-	ReviewCol      string
+	DB           *sql.DB
+	RateTable    string
+	IdCol        string
+	AuthorCol    string
+	AnonymousCol string
+	RateCol      string
+	ReviewCol    string
+	string
 	TimeCol        string
 	UsefulCountCol string
 	ReplyCountCol  string
@@ -127,14 +131,14 @@ func (s *rateService) Rate(ctx context.Context, rate *Rate) (int64, error) {
 	stmt1.ExecContext(ctx, rate.Id)
 
 	query2 := fmt.Sprintf(
-		"insert into %s(%s, %s, %s, %s, %s, histories) values ($1, $2, $3, $4, $5, $6) on conflict (%s, %s) do update set %s = $3, %s = $4, %s = $5, histories = $6",
-		s.RateTable, s.IdCol, s.AuthorCol, s.RateCol, s.ReviewCol, s.TimeCol, s.IdCol, s.AuthorCol, s.RateCol, s.ReviewCol, s.TimeCol)
+		"insert into %s(%s, %s, %s, %s, %s, %s, histories) values ($1, $2, $3, $4, $5, $6, $7) on conflict (%s, %s) do update set %s = $3,  %s = $4, %s = $5, %s = $6, histories = $7",
+		s.RateTable, s.IdCol, s.AuthorCol, s.AnonymousCol, s.RateCol, s.ReviewCol, s.TimeCol, s.IdCol, s.AuthorCol, s.AnonymousCol, s.RateCol, s.ReviewCol, s.TimeCol)
 	fmt.Println(query2)
 	stmt, err := s.DB.Prepare(query2)
 	if err != nil {
 		return -1, err
 	}
-	res2, err := stmt.ExecContext(ctx, rate.Id, rate.Author, rate.Rate, rate.Review, rate.Time, s.ToArray(rate.Histories))
+	res2, err := stmt.ExecContext(ctx, rate.Id, rate.Author, rate.Anonymous, rate.Rate, rate.Review, rate.Time, s.ToArray(rate.Histories))
 	if err != nil {
 		return -1, err
 	}

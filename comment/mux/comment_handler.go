@@ -3,12 +3,13 @@ package mux
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/core-go/reaction/comment"
+	// "github.com/core-go/reaction/comment"
+	"go-service/internal/reaction/comment"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
@@ -45,7 +46,7 @@ func (h *CommentHandler) Load(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(res)
 		return
 	}
-	http.Error(w, errors.New("parameter is required").Error(), http.StatusBadRequest)
+	http.Error(w, "parameter is required", http.StatusBadRequest)
 	return
 }
 func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -67,12 +68,16 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, er3.Error(), 500)
 			return
 		}
+		if res <= 0 {
+			http.Error(w, "no records affected", http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		json.NewEncoder(w).Encode(res)
+		json.NewEncoder(w).Encode(comment.CommentId)
 		return
 	}
-	http.Error(w, errors.New("parameter is required").Error(), http.StatusInternalServerError)
+	http.Error(w, "parameter is required", http.StatusBadRequest)
 	return
 }
 
@@ -104,9 +109,9 @@ func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *CommentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	var commentId, id, author string
-	commentId = mux.Vars(r)[commentId]
-	author = mux.Vars(r)[author]
-	id = mux.Vars(r)[id]
+	commentId = mux.Vars(r)[h.commentIdField]
+	author = mux.Vars(r)[h.authorField]
+	id = mux.Vars(r)[h.idField]
 	if len(commentId) > 0 && len(author) > 0 && len(id) > 0 {
 		res, err := h.service.Delete(r.Context(), commentId, id, author)
 		if err != nil {
