@@ -1,12 +1,9 @@
 package search
 
 import (
-	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
-	q "github.com/core-go/sql"
-	"github.com/lib/pq"
-	"reflect"
 	"sort"
 
 	"golang.org/x/text/collate"
@@ -17,7 +14,11 @@ import (
 var collator = collate.New(language.Und)
 
 type queryInfo struct {
-	db          *sql.DB
+	db      *sql.DB
+	toArray func(interface{}) interface {
+		driver.Valuer
+		sql.Scanner
+	}
 	table       string
 	url         string
 	id          string
@@ -25,10 +26,11 @@ type queryInfo struct {
 	displayName string
 }
 
-var colsInfo, _ = q.GetColumnIndexes(reflect.TypeOf(Info{}))
-
-func NewQueryInfo(db *sql.DB, table string, url string, id string, name string, displayName string) queryInfo {
-	return queryInfo{db: db, table: table, url: url, id: id, name: name, displayName: displayName}
+func NewQueryInfo(db *sql.DB, table string, url string, id string, name string, displayName string, toArray func(interface{}) interface {
+	driver.Valuer
+	sql.Scanner
+}) queryInfo {
+	return queryInfo{db: db, table: table, url: url, id: id, name: name, displayName: displayName, toArray: toArray}
 }
 
 func (i queryInfo) Load(ids []string) ([]Info, error) {
@@ -38,9 +40,17 @@ func (i queryInfo) Load(ids []string) ([]Info, error) {
 	}
 	ids = distinct(ids)
 	querysql := fmt.Sprintf(`select %s as id, %s as url, %s as name, %s as displayname from %s where %s = any(%s) and %s is not null order by %s`,
-		i.id, i.url, i.name, i.displayName, i.table, i.id, q.BuildDollarParam(1), i.url, i.id)
+		i.id, i.url, i.name, i.displayName, i.table, i.id, "$1", i.url, i.id)
 	r := make([]Info, 0)
-	err := q.Query(context.Background(), i.db, colsInfo, &r, querysql, pq.Array(ids))
+	rows, err := i.db.Query(querysql, i.toArray(ids))
+	for rows.Next() {
+		var info Info
+		err := rows.Scan(&info.Id, &info.Url, &info.Name, &info.DisplayName)
+		if err != nil {
+			return nil, err
+		}
+		r = append(r, info)
+	}
 	if err != nil {
 		return rs, err
 	}

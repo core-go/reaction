@@ -87,6 +87,7 @@ func (s *commentReactionService) Save(ctx context.Context, commentId string, aut
 	}
 	qr := fmt.Sprintf("insert into %s(%s,%s,%s,%s,%s) values($1,$2,$3,$4,$5)",
 		s.reactionTable, s.commentIdCol, s.authorCol, s.userIdCol, s.timeCol, s.reactionCol)
+	fmt.Print(qr)
 	res, err := tx.ExecContext(ctx, qr, commentId, author, userId, time.Now(), reaction)
 	if err != nil {
 		return -1, err
@@ -98,6 +99,7 @@ func (s *commentReactionService) Save(ctx context.Context, commentId string, aut
 	result += numRows
 	qr2 := fmt.Sprintf("insert into %s(%s,%s) values($1,1) on conflict(%s) do update set %s = %s.%s + 1 where %s.%s = $1",
 		s.parentTable, s.parentIdCol, s.parentUsefulCol, s.parentIdCol, s.parentUsefulCol, s.parentTable, s.parentUsefulCol, s.parentTable, s.parentIdCol)
+	fmt.Print(qr2)
 
 	rows, err := tx.ExecContext(ctx, qr2, commentId)
 	if err != nil {
