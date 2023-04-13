@@ -39,13 +39,13 @@ func (i queryInfo) Load(ids []string) ([]Info, error) {
 		return rs, nil
 	}
 	ids = distinct(ids)
-	querysql := fmt.Sprintf(`select %s as id, %s as url, %s as name, %s as displayname from %s where %s = any(%s) and %s is not null order by %s`,
-		i.id, i.url, i.name, i.displayName, i.table, i.id, "$1", i.url, i.id)
+	querysql := fmt.Sprintf(`select %s as id, %s as url, COALESCE(%s,%s) as name from %s where %s = any(%s) and %s is not null order by %s`,
+		i.id, i.url, i.displayName, i.name, i.table, i.id, "$1", i.url, i.id)
 	r := make([]Info, 0)
 	rows, err := i.db.Query(querysql, i.toArray(ids))
 	for rows.Next() {
 		var info Info
-		err := rows.Scan(&info.Id, &info.Url, &info.Name, &info.DisplayName)
+		err := rows.Scan(&info.Id, &info.Url, &info.Name)
 		if err != nil {
 			return nil, err
 		}

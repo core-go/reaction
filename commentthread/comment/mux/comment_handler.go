@@ -3,9 +3,10 @@ package mux
 import (
 	"context"
 	"encoding/json"
-	comment "github.com/core-go/reaction/comment-thread/comment"
-	"github.com/gorilla/mux"
+	"github.com/core-go/reaction/commentthread/comment"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type CommentHandler struct {

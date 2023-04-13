@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 	"encoding/json"
+	commentthread2 "github.com/core-go/reaction/commentthread"
 	"github.com/core-go/search"
-	commentthread2 "go-service/internal/reaction/commentthread"
 	"net/http"
 )
 

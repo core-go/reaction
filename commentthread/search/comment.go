@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/core-go/reaction/commentthread"
 	. "github.com/core-go/sql"
-	commentthread2 "go-service/internal/reaction/commentthread"
 	"reflect"
 )
 
 type CommentThreadSearchService interface {
-	Search(ctx context.Context, rf *commentthread2.CommentThreadFilter) ([]commentthread2.CommentThread, int64, error)
+	Search(ctx context.Context, rf *commentthread.CommentThreadFilter) ([]commentthread.CommentThread, int64, error)
 }
 
 type commentThreadSearchService struct {
@@ -44,7 +44,7 @@ func NewCommentThreadSearchService(Database *sql.DB,
 	}, options ...func(context.Context, interface{}) (interface{}, error)) (int64, error),
 	getOffset func(limit int64, page int64, opts ...int64) int64,
 ) (*commentThreadSearchService, error) {
-	modelType := reflect.TypeOf(commentthread2.CommentThread{})
+	modelType := reflect.TypeOf(commentthread.CommentThread{})
 	fieldsIndex, _ := GetColumnIndexes(modelType)
 	return &commentThreadSearchService{
 		Database:       Database,
@@ -59,10 +59,10 @@ func NewCommentThreadSearchService(Database *sql.DB,
 	}, nil
 }
 
-func (f *commentThreadSearchService) Search(ctx context.Context, rf *commentthread2.CommentThreadFilter) ([]commentthread2.CommentThread, int64, error) {
+func (f *commentThreadSearchService) Search(ctx context.Context, rf *commentthread.CommentThreadFilter) ([]commentthread.CommentThread, int64, error) {
 	sql, params := f.BuildQuery(rf)
 	fmt.Print(sql, params)
-	rates := make([]commentthread2.CommentThread, 0)
+	rates := make([]commentthread.CommentThread, 0)
 	if rf.Page == 0 {
 		rf.Page = 1
 	}
@@ -91,11 +91,7 @@ func (f *commentThreadSearchService) Search(ctx context.Context, rf *commentthre
 		i := BinarySearch(infos, c.Author)
 		if i >= 0 {
 			rates[k].AuthorURL = &infos[i].Url
-			if infos[i].DisplayName != nil {
-				rates[k].AuthorName = infos[i].DisplayName
-			} else {
-				rates[k].AuthorName = &infos[i].Name
-			}
+			rates[k].AuthorName = &infos[i].Name
 		}
 	}
 	if err != nil {

@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/core-go/reaction/comment"
-	"go-service/internal/reaction/comment"
+	"github.com/core-go/reaction/comment"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"

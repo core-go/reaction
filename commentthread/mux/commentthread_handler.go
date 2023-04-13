@@ -3,7 +3,7 @@ package mux
 import (
 	"context"
 	"encoding/json"
-	commentthread "go-service/internal/reaction/commentthread"
+	commentthread "github.com/core-go/reaction/commentthread"
 	"net/http"
 	"strings"
 	"time"

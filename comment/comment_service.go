@@ -106,11 +106,7 @@ func (s *commentService) Load(ctx context.Context, id string, author string) ([]
 		i := BinarySearch(infos, c.Author)
 		if i >= 0 && !c.Anonymous {
 			comments[k].AuthorURL = &infos[i].Url
-			if infos[i].DisplayName != nil {
-				comments[k].AuthorName = infos[i].DisplayName
-			} else {
-				comments[k].AuthorName = &infos[i].Name
-			}
+			comments[k].AuthorName = &infos[i].Name
 		}
 	}
 	return comments, nil
