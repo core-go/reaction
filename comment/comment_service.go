@@ -92,7 +92,7 @@ func (s *commentService) Load(ctx context.Context, id string, author string) ([]
 	}
 	ids := make([]string, 0)
 	for _, r := range comments {
-		ids = append(ids, r.Author)
+		ids = append(ids, r.UserId)
 	}
 	if s.QueryInfo == nil {
 		return comments, nil
@@ -103,10 +103,13 @@ func (s *commentService) Load(ctx context.Context, id string, author string) ([]
 	}
 	for k, _ := range comments {
 		c := comments[k]
-		i := BinarySearch(infos, c.Author)
+		i := BinarySearch(infos, c.UserId)
 		if i >= 0 && !c.Anonymous {
-			comments[k].AuthorURL = &infos[i].Url
-			comments[k].AuthorName = &infos[i].Name
+			if infos[i].Id == c.UserId {
+				comments[k].AuthorURL = &infos[i].Url
+				comments[k].AuthorName = &infos[i].Name
+			}
+
 		}
 	}
 	return comments, nil

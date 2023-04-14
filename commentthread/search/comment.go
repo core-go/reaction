@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"github.com/core-go/reaction/commentthread"
+	commentthread "github.com/core-go/reaction/commentthread"
 	. "github.com/core-go/sql"
 	"reflect"
 )
@@ -90,8 +90,10 @@ func (f *commentThreadSearchService) Search(ctx context.Context, rf *commentthre
 		c := rates[k]
 		i := BinarySearch(infos, c.Author)
 		if i >= 0 {
-			rates[k].AuthorURL = &infos[i].Url
-			rates[k].AuthorName = &infos[i].Name
+			if infos[i].Id == c.Author {
+				rates[k].AuthorURL = &infos[i].Url
+				rates[k].AuthorName = &infos[i].Name
+			}
 		}
 	}
 	if err != nil {

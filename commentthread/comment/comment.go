@@ -13,7 +13,6 @@ type Comment struct {
 	Author          string     `json:"author" gorm:"column:author"`
 	UserId          string     `json:"userId" gorm:"column:userid"`
 	Comment         string     `json:"comment" gorm:"column:comment"`
-	Parent          *string    `json:"parent" gorm:"column:parent"`
 	Time            time.Time  `json:"time" gorm:"column:time"`
 	CommentThreadId string     `json:"commentThreadId" gorm:"commentthreadid"`
 	UpdatedAt       *time.Time `json:"updatedat" gorm:"column:updatedat"`

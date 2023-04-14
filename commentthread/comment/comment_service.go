@@ -15,7 +15,7 @@ type CommentService interface {
 	Remove(ctx context.Context, commentId string, commentThreadId string) (int64, error)
 }
 
-func NewCommentService(db *sql.DB, replyTable string, commentIdCol string, authorCol string, idCol string, updatedAtCol string, commentCol string, userIdCol string, timeCol string, parentCol string, historiesCol string, commentThreadIdCol string, reactionCol string, commentReactionTable string, commentIdReactionCol string, userTable string, userIdUserCol string, usernameUserCol string, avatarUserCol string, commentInfoTable string, userfulCountInfoCol string, commentIdInfoCol string, commentThreadInfoTable string, commentIdCommentThreadInfoCol string, replyCountCommentThreadInfoCol string, usefulCountCommentThreadInfoCol string, queryInfo func(ids []string) ([]Info, error), toArray func(interface{}) interface {
+func NewCommentService(db *sql.DB, replyTable string, commentIdCol string, authorCol string, idCol string, updatedAtCol string, commentCol string, userIdCol string, timeCol string, historiesCol string, commentThreadIdCol string, reactionCol string, commentReactionTable string, commentIdReactionCol string, userTable string, userIdUserCol string, usernameUserCol string, avatarUserCol string, commentInfoTable string, userfulCountInfoCol string, commentIdInfoCol string, commentThreadInfoTable string, commentIdCommentThreadInfoCol string, replyCountCommentThreadInfoCol string, usefulCountCommentThreadInfoCol string, queryInfo func(ids []string) ([]Info, error), toArray func(interface{}) interface {
 	driver.Valuer
 	sql.Scanner
 }) CommentService {
@@ -25,7 +25,6 @@ func NewCommentService(db *sql.DB, replyTable string, commentIdCol string, autho
 		commentIdCol:                    commentIdCol,
 		authorCol:                       authorCol,
 		idCol:                           idCol,
-		parentCol:                       parentCol,
 		updatedAtCol:                    updatedAtCol,
 		historiesCol:                    historiesCol,
 		commentCol:                      commentCol,
@@ -57,7 +56,6 @@ type commentService struct {
 	commentIdCol                    string
 	authorCol                       string
 	idCol                           string
-	parentCol                       string
 	updatedAtCol                    string
 	historiesCol                    string
 	commentCol                      string
@@ -170,9 +168,9 @@ func (s *commentService) Create(ctx context.Context, comment Comment) (int64, er
 	}
 	defer tx.Rollback()
 
-	qr := fmt.Sprintf("insert into %s(%s,%s,%s,%s,%s,%s,%s,%s,%s) values($1,$2,$3,$4,$5,$6,$7,$8,$9)",
-		s.ReplyTable, s.commentIdCol, s.idCol, s.authorCol, s.userIdCol, s.commentCol, s.parentCol, s.timeCol, s.historiesCol, s.commentThreadIdCol)
-	rows1, err := tx.ExecContext(ctx, qr, comment.CommentId, comment.Id, comment.Author, comment.UserId, comment.Comment, comment.Parent, time.Now(), s.toArray([]interface{}{}), comment.CommentThreadId)
+	qr := fmt.Sprintf("insert into %s(%s,%s,%s,%s,%s,%s,%s,%s) values($1,$2,$3,$4,$5,$6,$7,$8)",
+		s.ReplyTable, s.commentIdCol, s.idCol, s.authorCol, s.userIdCol, s.commentCol, s.timeCol, s.historiesCol, s.commentThreadIdCol)
+	rows1, err := tx.ExecContext(ctx, qr, comment.CommentId, comment.Id, comment.Author, comment.UserId, comment.Comment, time.Now(), s.toArray([]interface{}{}), comment.CommentThreadId)
 	if err != nil {
 		return -1, err
 	}
@@ -244,7 +242,6 @@ func (s *commentService) GetComments(ctx context.Context, commentThreadId string
 			&comment.Author,
 			&comment.UserId,
 			&comment.Comment,
-			&comment.Parent,
 			&comment.Time,
 			&comment.UpdatedAt,
 			s.toArray(&comment.Histories),
@@ -262,7 +259,7 @@ func (s *commentService) GetComments(ctx context.Context, commentThreadId string
 	}
 	ids := make([]string, 0)
 	for _, r := range comments {
-		ids = append(ids, r.Author)
+		ids = append(ids, r.UserId)
 	}
 	infos, err := s.queryInfo(ids)
 	if err != nil {
@@ -270,10 +267,13 @@ func (s *commentService) GetComments(ctx context.Context, commentThreadId string
 	}
 	for k, _ := range comments {
 		c := comments[k]
-		i := BinarySearch(infos, c.Author)
+		i := BinarySearch(infos, c.UserId)
 		if i >= 0 {
-			comments[k].AuthorURL = &infos[i].Url
-			comments[k].AuthorName = &infos[i].Name
+			if comments[k].UserId == infos[i].Id {
+				comments[k].AuthorURL = &infos[i].Url
+				comments[k].AuthorName = &infos[i].Name
+			}
+
 		}
 	}
 

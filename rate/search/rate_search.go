@@ -89,8 +89,10 @@ func (f *rateCommentSearchService) Search(ctx context.Context, rf *RateFilter) (
 		c := rates[k]
 		i := BinarySearch(infos, c.Author)
 		if i >= 0 && !c.Anonymous {
-			rates[k].AuthorURL = &infos[i].Url
-			rates[k].AuthorName = &infos[i].Name
+			if rates[k].Author == infos[i].Id {
+				rates[k].AuthorURL = &infos[i].Url
+				rates[k].AuthorName = &infos[i].Name
+			}
 		}
 	}
 	if err != nil {
