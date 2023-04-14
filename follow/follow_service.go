@@ -89,7 +89,7 @@ func (s *followService) Follow(ctx context.Context, id string, target string) (i
 	if er0 != nil {
 		return -1, nil
 	}
-	stmt2.ExecContext(ctx, target, id)
+	stmt2.ExecContext(ctx, id, target)
 
 	query3 := fmt.Sprintf(
 		"insert into %s(%s, %s, %s) values ($1, 0, 1) on conflict (%s) do update set %s = %s.%s + 1;",
