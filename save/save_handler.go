@@ -64,7 +64,7 @@ func (h *SaveHandler) Remove(w http.ResponseWriter, r *http.Request) {
 func (h *SaveHandler) Load(w http.ResponseWriter, r *http.Request) {
 	id := GetRequiredParam(w, r)
 	if len(id) > 0 {
-		var items []interface{}
+		var items = make([]interface{}, 0)
 		err := h.service.Load(r.Context(), id, &items)
 
 		if err != nil {
