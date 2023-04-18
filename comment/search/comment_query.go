@@ -27,11 +27,6 @@ func BuildCommentQuery(filter interface{}) (query string, params []interface{}) 
 		params = append(params, s.Author)
 		i++
 	}
-	if len(s.UserId) > 0 {
-		where = append(where, fmt.Sprintf(`userid = %s`, q.BuildDollarParam(i)))
-		params = append(params, s.UserId)
-		i++
-	}
 	if len(s.Comment) > 0 {
 		where = append(where, fmt.Sprintf(`comment ilike %s`, q.BuildDollarParam(i)))
 		params = append(params, "%"+s.Comment+"%")

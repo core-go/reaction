@@ -3,14 +3,14 @@ package search
 import (
 	"context"
 	"encoding/json"
-	commentthread2 "github.com/core-go/reaction/commentthread"
+	commentthread "github.com/core-go/reaction/commentthread"
 	"github.com/core-go/search"
 	"net/http"
 )
 
-type SearchResult struct {
-	List  []commentthread2.CommentThread `json:"list"`
-	Total int64                          `json:"total"`
+type Result struct {
+	List  []commentthread.CommentThread `json:"list"`
+	Total int64                         `json:"total"`
 }
 
 func NewSearchCommentThreadHandler(
@@ -26,7 +26,7 @@ type CommentThreadSearchHandler struct {
 }
 
 func (h *CommentThreadSearchHandler) Search(w http.ResponseWriter, r *http.Request) {
-	var filter commentthread2.CommentThreadFilter
+	var filter CommentThreadFilter
 	er1 := Decode(w, r, &filter)
 	if er1 != nil {
 		http.Error(w, er1.Error(), http.StatusInternalServerError)
@@ -41,7 +41,7 @@ func (h *CommentThreadSearchHandler) Search(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	result := SearchResult{
+	result := Result{
 		List:  list,
 		Total: total,
 	}

@@ -3,12 +3,10 @@ package mux
 import (
 	"context"
 	"encoding/json"
-	commentthread "github.com/core-go/reaction/commentthread"
+	"github.com/core-go/reaction/commentthread"
+	"github.com/gorilla/mux"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/gorilla/mux"
 )
 
 func NewCommentThreadHandler(
@@ -37,7 +35,8 @@ type CommentThreadHandler struct {
 
 func (h *CommentThreadHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	commentId := mux.Vars(r)[h.commentIdField]
-	res, err := h.service.Remove(r.Context(), commentId)
+	author := mux.Vars(r)[h.authorField]
+	res, err := h.service.Remove(r.Context(), commentId, author)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -48,27 +47,22 @@ func (h *CommentThreadHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CommentThreadHandler) Comment(w http.ResponseWriter, r *http.Request) {
-	var comment commentthread.CommentThread
-	t := time.Now()
+	var comment commentthread.Request
 	er1 := Decode(w, r, &comment)
 	if er1 != nil {
 		return
 	}
-	// comment.Id = GetRequiredParam(w, r, 3)
-	// comment.Author = GetRequiredParam(w, r, 2)
-	comment.Id = mux.Vars(r)[h.idField]
-	comment.Author = mux.Vars(r)[h.authorField]
-	if len(comment.Id) == 0 || len(comment.Author) == 0 {
+	id := mux.Vars(r)[h.idField]
+	author := mux.Vars(r)[h.authorField]
+	if len(id) == 0 || len(author) == 0 {
 		http.Error(w, "parameter is required", http.StatusBadRequest)
 		return
 	}
-	comment.UserId = comment.Author
-	comment.CommentId, er1 = h.generateId(r.Context())
+	commentId, er1 := h.generateId(r.Context())
 	if er1 != nil {
 		http.Error(w, er1.Error(), http.StatusInternalServerError)
 	}
-	comment.Time = t
-	result, er3 := h.service.Comment(r.Context(), comment)
+	result, er3 := h.service.Comment(r.Context(), id, commentId, author, comment)
 	if er3 != nil {
 		http.Error(w, er3.Error(), http.StatusInternalServerError)
 		return
@@ -79,19 +73,23 @@ func (h *CommentThreadHandler) Comment(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(comment.CommentId)
+	json.NewEncoder(w).Encode(result)
 }
 func (h *CommentThreadHandler) Update(w http.ResponseWriter, r *http.Request) {
-	var comment commentthread.CommentThread
+	var comment commentthread.Request
 	err := Decode(w, r, &comment)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	comment.CommentId = GetRequiredParam(w, r)
-	res, err1 := h.service.Update(r.Context(), comment)
+	author := GetRequiredParam(w, r, 0)
+	commentId := GetRequiredParam(w, r)
+	res, err1 := h.service.Update(r.Context(), commentId, author, comment)
 	if err1 != nil {
+		if res == -2 {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func NewRateHandler(
@@ -14,40 +13,37 @@ func NewRateHandler(
 	authorIndex int,
 	idIndex int,
 	max int,
-) RateHandler {
-	return RateHandler{
+) Handler {
+	return Handler{
 		service:     service,
 		authorIndex: authorIndex,
 		idIndex:     idIndex,
-		max:max,
+		max:         max,
 	}
 }
 
-type RateHandler struct {
+type Handler struct {
 	service     RateService
 	authorIndex int
 	idIndex     int
-	max int
+	max         int
 }
 
-
-func (h *RateHandler) Rate(w http.ResponseWriter, r *http.Request) {
-	var rate Rate
-	var t = time.Now()
-	rate.Time = &t
+func (h *Handler) Rate(w http.ResponseWriter, r *http.Request) {
+	var rate Request
 	er1 := Decode(w, r, &rate)
-	rate.Author = GetRequiredParam(w, r, h.authorIndex)
-	rate.Id = GetRequiredParam(w, r, h.idIndex)
+	author := GetRequiredParam(w, r, h.authorIndex)
+	id := GetRequiredParam(w, r, h.idIndex)
 
 	if er1 == nil {
-		errors := Validate(r.Context(), &rate, h.max)
+		errors := Validate(r.Context(), rate, h.max)
 		if len(errors) > 0 {
-			w.Header().Set("Content-Type","application/json")
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(422)
 			json.NewEncoder(w).Encode(errors)
 			return
 		}
-		result, er3 := h.service.Rate(r.Context(), &rate)
+		result, er3 := h.service.Rate(r.Context(), id, author, rate)
 		if er3 != nil {
 			http.Error(w, er3.Error(), http.StatusInternalServerError)
 			return
@@ -99,21 +95,14 @@ func Decode(w http.ResponseWriter, r *http.Request, obj interface{}, options ...
 	return nil
 }
 
-func Validate(ctx context.Context, rate *Rate, max int) []ErrorMessage {
-	errors := []ErrorMessage{}
+func Validate(ctx context.Context, rate Request, max int) []ErrorMessage {
+	var errors []ErrorMessage
 	if rate.Rate > max {
 		errors = append(errors, ErrorMessage{
-			Field:   "rate",
-			Code:    "max",
+			Field: "rate",
+			Code:  "max",
 			Param: strconv.Itoa(max),
 		})
 	}
 	return errors
-}
-
-type ErrorMessage struct {
-	Field   string `yaml:"field" mapstructure:"field" json:"field,omitempty" gorm:"column:field" bson:"field,omitempty" dynamodbav:"field,omitempty" firestore:"field,omitempty"`
-	Code    string `yaml:"code" mapstructure:"code" json:"code,omitempty" gorm:"column:code" bson:"code,omitempty" dynamodbav:"code,omitempty" firestore:"code,omitempty"`
-	Param   string `yaml:"param" mapstructure:"param" json:"param,omitempty" gorm:"column:param" bson:"param,omitempty" dynamodbav:"param,omitempty" firestore:"param,omitempty"`
-	Message string `yaml:"message" mapstructure:"message" json:"message,omitempty" gorm:"column:message" bson:"message,omitempty" dynamodbav:"message,omitempty" firestore:"message,omitempty"`
 }

@@ -1,6 +1,5 @@
 package follow
 
-
 type Follower struct {
 	Id       string `json:"id,omitempty" gorm:"column:id;primary_key" bson:"id,omitempty" dynamodbav:"id,omitempty" firestore:"id,omitempty" validate:"required,max=255"`
 	Follower string `json:"follower,omitempty" gorm:"column:follower" bson:"follower,omitempty" dynamodbav:"follower,omitempty" firestore:"follower,omitempty" validate:"required,max=10"`

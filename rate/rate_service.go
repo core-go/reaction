@@ -9,7 +9,7 @@ import (
 
 type RateService interface {
 	Load(ctx context.Context, id string, author string) (*Rate, error)
-	Rate(ctx context.Context, rate *Rate) (int64, error)
+	Rate(ctx context.Context, id string, author string, req Request) (int64, error)
 }
 
 func NewRateService(
@@ -96,7 +96,8 @@ func (s *rateService) Load(ctx context.Context, id string, author string) (*Rate
 	return nil, nil
 }
 
-func (s *rateService) Rate(ctx context.Context, rate *Rate) (int64, error) {
+func (s *rateService) Rate(ctx context.Context, id string, author string, req Request) (int64, error) {
+	var rate = Rate{Id: id, Author: author, Review: req.Review, Rate: req.Rate, Anonymous: req.Anonymous}
 	oldRate, _ := s.Load(ctx, rate.Id, rate.Author)
 	query1 := fmt.Sprintf("insert into %s(%s, %s, %s%d, %s, %s) values ($1, %d, 1, 1, %d) on conflict (%s) do update set ",
 		s.InfoTable, s.InfoIdCol, s.InfoRateCol, s.InfoRateCol, rate.Rate, s.RateCountCol, s.RateScoreCol, rate.Rate, rate.Rate, s.InfoIdCol)

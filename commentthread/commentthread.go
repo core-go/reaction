@@ -7,11 +7,14 @@ import (
 	"time"
 )
 
+type Request struct {
+	Comment string `json:"comment"`
+}
+
 type CommentThread struct {
 	CommentId   string     `json:"commentId" gorm:"column:commentid;primary_key" bson:"commentId" firestore:"commentId" match:"equal"`
 	Id          string     `json:"id" gorm:"column:id" bson:"id" firestore:"id" validate:"required"  match:"equal"`
 	Author      string     `json:"author" gorm:"column:author" bson:"author" firestore:"author" validate:"required" match:"equal"`
-	UserId      string     `json:"userId" gorm:"column:userid" bson:"UserId" firestore:"UserId" validate:"required" match:"equal"`
 	Comment     string     `json:"comment" gorm:"column:comment" bson:"comment" firestore:"comment"`
 	Time        time.Time  `json:"time" gorm:"column:time" bson:"time" firestore:"time"`
 	UpdatedAt   *time.Time `json:"updatedAt" gorm:"column:updatedat" bson:"updatedat" firestore:"updatedat"`

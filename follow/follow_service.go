@@ -89,11 +89,11 @@ func (s *followService) Follow(ctx context.Context, id string, target string) (i
 	if er0 != nil {
 		return -1, nil
 	}
-	stmt2.ExecContext(ctx, id, target)
+	stmt2.ExecContext(ctx, target, id)
 
 	query3 := fmt.Sprintf(
 		"insert into %s(%s, %s, %s) values ($1, 0, 1) on conflict (%s) do update set %s = %s.%s + 1;",
-		s.UserInfoTable, s.UserInfoIdCol, s.FollowerCountCol, s.FollowingCountCol, s.UserInfoIdCol, s.FollowingCountCol, s.UserInfoTable, s.FollowingCountCol)
+		s.UserInfoTable, s.UserInfoIdCol, s.FollowerCountCol, s.FollowingCountCol, s.UserInfoIdCol, s.FollowingCountCol, s.FollowingCountCol, s.UserInfoTable)
 	fmt.Println(query3)
 	stmt3, er0 := s.DB.Prepare(query3)
 	if er0 != nil {
@@ -103,7 +103,7 @@ func (s *followService) Follow(ctx context.Context, id string, target string) (i
 
 	query4 := fmt.Sprintf(
 		"insert into %s(%s, %s, %s) values ($1, 1, 0) on conflict (%s) do update set %s = %s.%s + 1;",
-		s.UserInfoTable, s.UserInfoIdCol, s.FollowerCountCol, s.FollowingCountCol, s.UserInfoIdCol, s.FollowerCountCol, s.UserInfoTable, s.FollowerCountCol)
+		s.UserInfoTable, s.UserInfoIdCol, s.FollowerCountCol, s.FollowingCountCol, s.UserInfoIdCol, s.FollowerCountCol, s.FollowerCountCol, s.UserInfoTable)
 	fmt.Println(query4)
 	stmt4, er0 := s.DB.Prepare(query4)
 	if er0 != nil {

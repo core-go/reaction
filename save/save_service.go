@@ -24,9 +24,9 @@ func NewSaveService(
 	targetTable string,
 	idTargetCol string,
 	toArray func(interface{}) interface {
-	driver.Valuer
-	sql.Scanner
-},
+		driver.Valuer
+		sql.Scanner
+	},
 
 ) SaveService {
 	return &saveService{

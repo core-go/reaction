@@ -2,9 +2,9 @@ package response
 
 import (
 	"context"
+	"github.com/core-go/search"
 	"net/http"
 	"reflect"
-	"github.com/core-go/search"
 )
 
 type SearchResponseHandler interface {

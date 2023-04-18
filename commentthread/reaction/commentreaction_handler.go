@@ -23,7 +23,7 @@ func NewCommentReactionHandler(service CommentReactionService, commentIdIndex in
 	}
 }
 
-func (h *CommentReactionHandler) SetUsetful(w http.ResponseWriter, r *http.Request) {
+func (h *CommentReactionHandler) SetUseful(w http.ResponseWriter, r *http.Request) {
 	commentId := GetRequiredParam(w, r, h.commentIdIndex)
 	author := GetRequiredParam(w, r, h.authorIndex)
 	userId := GetRequiredParam(w, r, h.userIdIndex)

@@ -11,7 +11,7 @@ import (
 )
 
 type CommentThreadSearchService interface {
-	Search(ctx context.Context, rf *commentthread.CommentThreadFilter) ([]commentthread.CommentThread, int64, error)
+	Search(ctx context.Context, rf *CommentThreadFilter) ([]commentthread.CommentThread, int64, error)
 }
 
 type commentThreadSearchService struct {
@@ -59,7 +59,7 @@ func NewCommentThreadSearchService(Database *sql.DB,
 	}, nil
 }
 
-func (f *commentThreadSearchService) Search(ctx context.Context, rf *commentthread.CommentThreadFilter) ([]commentthread.CommentThread, int64, error) {
+func (f *commentThreadSearchService) Search(ctx context.Context, rf *CommentThreadFilter) ([]commentthread.CommentThread, int64, error) {
 	sql, params := f.BuildQuery(rf)
 	fmt.Print(sql, params)
 	rates := make([]commentthread.CommentThread, 0)

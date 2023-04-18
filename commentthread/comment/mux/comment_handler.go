@@ -56,7 +56,7 @@ func (h *CommentHandler) GetReplyComments(w http.ResponseWriter, r *http.Request
 }
 
 func (h *CommentHandler) Reply(w http.ResponseWriter, r *http.Request) {
-	var obj comment.Comment
+	var obj comment.Request
 	commentThreadId := mux.Vars(r)[h.commentThreadIdField]
 	author := mux.Vars(r)[h.authorField]
 	id := mux.Vars(r)[h.idField]
@@ -68,67 +68,64 @@ func (h *CommentHandler) Reply(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	obj.CommentThreadId = commentThreadId
-	obj.Author = author
-	obj.UserId = author
-	obj.CommentId, err = h.GenerateId(r.Context())
+	commentId, err := h.GenerateId(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	obj.Id = id
 	if err != nil {
 		return
 	}
-	res, err := h.service.Create(r.Context(), obj)
+	res, err := h.service.Create(r.Context(), id, commentId, commentThreadId, author, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if res <= 0 {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(500)
-		json.NewEncoder(w).Encode("")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(obj.CommentId)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *CommentHandler) UpdateReply(w http.ResponseWriter, r *http.Request) {
-	var obj comment.Comment
+	var obj comment.Request
 	commentId := mux.Vars(r)[h.commentIdField]
+	author := mux.Vars(r)[h.authorField]
 	err := Decode(w, r, &obj)
 	if err != nil {
 		return
 	}
-	obj.CommentId = commentId
-	res, err := h.service.Update(r.Context(), obj)
+	res, err := h.service.Update(r.Context(), commentId, author, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if res <= 0 {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(500)
-		json.NewEncoder(w).Encode("")
+		if res == -2 {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(obj.CommentId)
+	json.NewEncoder(w).Encode(res)
 }
 func (h *CommentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	commentId := mux.Vars(r)[h.commentIdField]
 	commentThreadId := mux.Vars(r)[h.commentThreadIdField]
-	if len(commentId) <= 0 || len(commentThreadId) <= 0 {
+	author := mux.Vars(r)[h.authorField]
+	if len(commentId) <= 0 || len(commentThreadId) <= 0 || len(author) <= 0 {
 		http.Error(w, "parameters is required", http.StatusBadRequest)
 		return
 	}
-	res, err := h.service.Remove(r.Context(), commentId, commentThreadId)
+	res, err := h.service.Remove(r.Context(), commentId, commentThreadId, author)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
