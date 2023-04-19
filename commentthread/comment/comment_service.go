@@ -89,7 +89,7 @@ func (s *commentService) Update(ctx context.Context, commentId, author string, r
 	qr := fmt.Sprintf("select %s, %s,%s,%s from %s where %s = $1", s.commentIdCol, s.commentCol, s.historiesCol, s.authorCol, s.ReplyTable, s.commentIdCol)
 	rows := s.db.QueryRow(qr, commentId)
 	var exist = Comment{}
-	err := rows.Scan(&exist.CommentId, &exist.Comment, s.toArray(&exist.Histories), exist.Author)
+	err := rows.Scan(&exist.CommentId, &exist.Comment, s.toArray(&exist.Histories), &exist.Author)
 	if err != nil {
 		return -1, err
 	}
