@@ -40,7 +40,7 @@ func (h *FollowHandler) UnFollow(w http.ResponseWriter, r *http.Request) {
 	if len(id) > 0 && len(target) > 0 {
 		result, err := h.service.UnFollow(r.Context(), id, target)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
