@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func NewRatesHandler(
@@ -32,14 +31,12 @@ type RatesHandler struct {
 }
 
 func (h *RatesHandler) Rate(w http.ResponseWriter, r *http.Request) {
-	var rate Rates
-	var t = time.Now()
-	rate.Time = &t
-	er1 := Decode(w, r, &rate)
-	rate.Author = GetRequiredParam(w, r, h.authorIndex) //0
-	rate.Id = GetRequiredParam(w, r, h.idIndex)         //1
+	var req Request
+	er1 := Decode(w, r, &req)
+	author := GetRequiredParam(w, r, h.authorIndex) //0
+	id := GetRequiredParam(w, r, h.idIndex)         //1
 	if er1 == nil {
-		errors, er2 := validate(&rate, h.max)
+		errors, er2 := validate(&req, h.max)
 		if er2 != nil {
 			http.Error(w, er2.Error(), 500)
 			return
@@ -50,18 +47,20 @@ func (h *RatesHandler) Rate(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(errors)
 			return
 		}
-		result, er3 := h.service.Rate(r.Context(), &rate)
+		result, er3 := h.service.Rate(r.Context(), id, author, &req)
+		fmt.Println(result)
 		if er3 != nil {
-			http.Error(w, er3.Error(), 500)
+			fmt.Println("Error : " + er3.Error())
+			http.Error(w, er3.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(result)
 	}
 }
 
-func validate(rate *Rates, max int) ([]ErrorMessage, error) {
+func validate(rate *Request, max int) ([]ErrorMessage, error) {
 	errors := []ErrorMessage{}
 	if rate.Rate > float32(max) {
 		errors = append(errors, ErrorMessage{Field: "rate", Code: "max", Param: strconv.Itoa(max)})

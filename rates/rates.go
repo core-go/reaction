@@ -17,7 +17,14 @@ type Rates struct {
 	UsefulCount int         `json:"usefulcount" gorm:"usefulcount"`
 	ReplyCount  int         `json:"replycount" gorm:"replycount"`
 	Histories   []Histories `json:"histories" gorm:"histories"`
-	Anonymous   bool        `json:"anonymous,omitempty" gorm:"column:anonymous" bson:"anonymous,omitempty" dynamodbav:"anonymous,omitempty" firestore:"anonymous,omitempty"`
+	Anonymous   bool        `json:"anonymous,omitempty" gorm:"column:anonymous"`
+}
+
+type Request struct {
+	Rate      float32   `json:"rate"`
+	Rates     []float32 `json:"rates"`
+	Review    string    `json:"review"`
+	Anonymous bool      `json:"anonymous,omitempty"`
 }
 
 type Histories struct {

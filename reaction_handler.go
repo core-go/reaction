@@ -34,7 +34,7 @@ func (h *ReactionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var t = time.Now()
 	er1 := Decode(w, r, &reaction)
 	if er1 != nil {
-		http.Error(w, er1.Error(), http.StatusInternalServerError)
+		return
 	}
 	reaction.UserId = GetRequiredParam(w, r, h.userIdIndex)
 	reaction.Author = GetRequiredParam(w, r, h.authorIndex)

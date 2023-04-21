@@ -96,6 +96,11 @@ func (s *commentService) Load(ctx context.Context, id string, author string) ([]
 		ids = append(ids, r.UserId)
 	}
 	if s.QueryInfo == nil {
+		for k, _ := range comments {
+			c := comments[k]
+			r := toResponse(c)
+			rs = append(rs, r)
+		}
 		return rs, nil
 	}
 	infos, err := s.QueryInfo(ids)
