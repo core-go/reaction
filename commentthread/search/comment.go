@@ -4,8 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
-	commentthread "github.com/core-go/reaction/commentthread"
+	"github.com/core-go/reaction/commentthread"
 	. "github.com/core-go/sql"
 	"reflect"
 )
@@ -61,7 +60,6 @@ func NewCommentThreadSearchService(Database *sql.DB,
 
 func (f *commentThreadSearchService) Search(ctx context.Context, rf *CommentThreadFilter) ([]commentthread.CommentThread, int64, error) {
 	sql, params := f.BuildQuery(rf)
-	fmt.Print(sql, params)
 	rates := make([]commentthread.CommentThread, 0)
 	if rf.Page == 0 {
 		rf.Page = 1

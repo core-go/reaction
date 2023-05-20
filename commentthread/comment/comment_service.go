@@ -109,7 +109,7 @@ func (s *commentService) Update(ctx context.Context, commentId, author string, r
 	return rows2.RowsAffected()
 }
 
-// Delete implements CommentThreadReplyService
+// Remove implements CommentThreadReplyService
 func (s *commentService) Remove(ctx context.Context, commentId string, commentThreadId string, author string) (int64, error) {
 	count := 0
 	err := s.db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s=$1 and %s=$2", s.ReplyTable, s.commentIdCol, s.authorCol), commentId, author).Scan(&count)
@@ -144,16 +144,18 @@ func (s *commentService) Remove(ctx context.Context, commentId string, commentTh
 		return -1, err
 	}
 	rowsAffected += numberRows
-	qr3 := fmt.Sprintf("delete from %s where %s = $1", s.commentReactionTable, s.commentIdReactionCol)
-	rows3, err := tx.ExecContext(ctx, qr3, commentId)
-	if err != nil {
-		return -1, err
+	if len(s.commentReactionTable) > 0 {
+		qr3 := fmt.Sprintf("delete from %s where %s = $1", s.commentReactionTable, s.commentIdReactionCol)
+		rows3, err := tx.ExecContext(ctx, qr3, commentId)
+		if err != nil {
+			return -1, err
+		}
+		numberRows, err = rows3.RowsAffected()
+		if err != nil {
+			return -1, err
+		}
+		rowsAffected += numberRows
 	}
-	numberRows, err = rows3.RowsAffected()
-	if err != nil {
-		return -1, err
-	}
-	rowsAffected += numberRows
 	qr4 := fmt.Sprintf("update %s set %s = %s - 1 where %s = $1", s.commentThreadInfoTable, s.replyCountCommentThreadInfoCol, s.replyCountCommentThreadInfoCol, s.commentIdCommentThreadInfoCol)
 	rows4, err := tx.ExecContext(ctx, qr4, commentThreadId)
 	if err != nil {
@@ -240,7 +242,6 @@ func (s *commentService) GetComments(ctx context.Context, commentThreadId string
 		s.commentInfoTable, s.commentIdCol, s.commentIdInfoCol, qr2,
 		s.commentThreadIdCol, param)
 	arr = append(arr, commentThreadId)
-	fmt.Println(query)
 	rows, err := s.db.QueryContext(ctx, query, arr...)
 	if err != nil {
 		return nil, err

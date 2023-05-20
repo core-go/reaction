@@ -128,7 +128,6 @@ func (s *commentService) Create(ctx context.Context, id string, commentId string
 	query1 := fmt.Sprintf(
 		"insert into %s(%s, %s, %s, %s, %s, %s, %s) values ($1, $2, $3, $4, $5, $6, $7)",
 		s.CommentTable, s.CommentIdCol, s.IdCol, s.AuthorCol, s.UserIdCol, s.CommentCol, s.AnonymousCol, s.TimeCol)
-	fmt.Println(query1)
 	stmt1, err := s.DB.Prepare(query1)
 	if err != nil {
 		return -1, err
@@ -141,7 +140,6 @@ func (s *commentService) Create(ctx context.Context, id string, commentId string
 	query2 := fmt.Sprintf(
 		"update %s set %s = %s.%s + 1 where %s = $1 and %s = $2",
 		s.RateTable, s.CommentCountCol, s.RateTable, s.CommentCountCol, s.RateIdCol, s.RateAuthorCol)
-	fmt.Println(query2)
 	stmt2, err := s.DB.Prepare(query2)
 	if err != nil {
 		return -1, err
@@ -157,7 +155,6 @@ func (s *commentService) Update(ctx context.Context, id string, commentId string
 		Comment: req.Comment, Anonymous: req.Anonymous, UpdatedAt: &t}
 	var oldComment Comment
 	query1 := fmt.Sprintf("select %s, %s, %s, histories from %s where %s = $1 limit 1", s.TimeCol, s.UpdatedAtCol, s.CommentCol, s.CommentTable, s.CommentIdCol)
-	fmt.Println(query1)
 	rows, _ := s.DB.QueryContext(ctx, query1, comment.CommentId)
 	for rows.Next() {
 		err := rows.Scan(&oldComment.Time, &oldComment.UpdatedAt, &oldComment.Comment, s.ToArray(&oldComment.Histories))
@@ -176,7 +173,6 @@ func (s *commentService) Update(ctx context.Context, id string, commentId string
 	query := fmt.Sprintf(
 		"update %s set %s = $1, %s = $2, histories = $3 where %s = $4;",
 		s.CommentTable, s.CommentCol, s.UpdatedAtCol, s.CommentIdCol)
-	fmt.Println(query)
 	stmt, err := s.DB.Prepare(query)
 	if err != nil {
 		return -1, err
@@ -196,7 +192,6 @@ func (s *commentService) Delete(ctx context.Context, id string, commentId string
 	}
 	defer tx.Rollback()
 	query1 := fmt.Sprintf("delete from %s where %s = $1", s.CommentTable, s.CommentIdCol)
-	fmt.Println(query1)
 	stmt1, er0 := tx.Prepare(query1)
 	if er0 != nil {
 		return -1, nil
@@ -209,7 +204,6 @@ func (s *commentService) Delete(ctx context.Context, id string, commentId string
 	query2 := fmt.Sprintf(
 		"update %s set %s = %s.%s - 1 where %s = $1 and %s = $2",
 		s.RateTable, s.CommentCountCol, s.RateTable, s.CommentCountCol, s.RateIdCol, s.RateAuthorCol)
-	fmt.Println(query2)
 	stmt2, err := tx.Prepare(query2)
 	if err != nil {
 		return -1, err

@@ -136,7 +136,6 @@ func (s *ratesService) Rate(ctx context.Context, id string, author string, req *
 	queryRate := fmt.Sprintf(
 		"insert into %s(%s, %s, %s, %s, %s, %s, %s, histories) values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (%s, %s) do update set %s = $3,  %s = $4, %s = $5, %s = $6, %s = $7, histories = $8",
 		s.TableName, s.IdCol, s.AuthorCol, s.AnonymousCol, s.RateCol, s.RatesCol, s.ReviewCol, s.TimeCol, s.IdCol, s.AuthorCol, s.AnonymousCol, s.RateCol, s.RatesCol, s.ReviewCol, s.TimeCol)
-	fmt.Println(queryRate)
 	stmt, err := tx.Prepare(queryRate)
 	if err != nil {
 		return -1, err
@@ -205,11 +204,9 @@ func (s *ratesService) upsertInfoTables(ctx context.Context, tx *sql.Tx, oldRate
 				s.InfoScoreCol, infoTable, s.InfoScoreCol, rateValue,
 				s.InfoRateCol, infoTable, s.InfoScoreCol, rateValue, infoTable, s.InfoCountCol)
 		}
-		fmt.Println(query1)
 		queries = append(queries, query1)
 		params = append(params, []interface{}{rate.Id})
 	}
-	fmt.Println(queries)
 	return s.ExecBatch(ctx, queries, params)
 }
 func (s *ratesService) upsertFullInfoTable(ctx context.Context, tx *sql.Tx, oldRate *Rates, rate Rates, max int, fullInfoTableName string, infoTablesName []string, existRate bool) (int64, error) {
@@ -229,7 +226,6 @@ func (s *ratesService) upsertFullInfoTable(ctx context.Context, tx *sql.Tx, oldR
 		return -1, err
 	}
 	pm := append(paramsi, paramsu...)
-	fmt.Println(queryMerged, pm)
 	rs, err := stmt.ExecContext(ctx, pm...)
 	if err != nil {
 		return -1, err
@@ -279,8 +275,6 @@ func (s *ratesService) ExecBatch(ctx context.Context, stmts []string, params [][
 	defer tx.Rollback()
 
 	for index, _ := range stmts {
-		fmt.Println(stmts[index])
-		fmt.Println(params[index]...)
 		stmt, err := tx.PrepareContext(ctx, stmts[index])
 		if err != nil {
 			return -1, err

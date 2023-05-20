@@ -219,30 +219,34 @@ func (s *commentThreadService) Remove(ctx context.Context, commentId string, aut
 		return -1, err
 	}
 	rowResult += rowsAffected
-	qr5 := fmt.Sprintf("delete from %s a where %s = $1",
-		s.reactionTable, s.commentIdReactionCol)
+	if len(s.reactionTable) > 0 {
+		qr5 := fmt.Sprintf("delete from %s a where %s = $1",
+			s.reactionTable, s.commentIdReactionCol)
 
-	res, err = tx.ExecContext(ctx, qr5, commentId)
-	if err != nil {
-		return -1, err
+		res, err = tx.ExecContext(ctx, qr5, commentId)
+		if err != nil {
+			return -1, err
+		}
+		rowsAffected, err = res.RowsAffected()
+		if err != nil {
+			return -1, err
+		}
+		rowResult += rowsAffected
 	}
-	rowsAffected, err = res.RowsAffected()
-	if err != nil {
-		return -1, err
-	}
-	rowResult += rowsAffected
-	qr6 := fmt.Sprintf("delete from %s a where a.%s = ANY($1)",
-		s.reactionReplyTable, s.commentIdReactionRelyCol)
+	if len(s.reactionReplyTable) > 0 {
+		qr6 := fmt.Sprintf("delete from %s a where a.%s = ANY($1)",
+			s.reactionReplyTable, s.commentIdReactionRelyCol)
 
-	res2, err := tx.ExecContext(ctx, qr6, s.toArray(ids))
-	if err != nil {
-		return -1, err
+		res2, err := tx.ExecContext(ctx, qr6, s.toArray(ids))
+		if err != nil {
+			return -1, err
+		}
+		rowsAffected, err = res2.RowsAffected()
+		if err != nil {
+			return -1, err
+		}
+		rowResult += rowsAffected
 	}
-	rowsAffected, err = res2.RowsAffected()
-	if err != nil {
-		return -1, err
-	}
-	rowResult += rowsAffected
 
 	if err = tx.Commit(); err != nil {
 		return -1, err

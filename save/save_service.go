@@ -178,7 +178,6 @@ func (s *saveService) Remove(ctx context.Context, id string, item string) (int64
 		}
 	}
 	query := fmt.Sprintf("update %s set %s = $1 where %s = $2", s.table, s.itemCol, s.idCol)
-	fmt.Println(query)
 	stmt, er0 := s.DB.Prepare(query)
 	if er0 != nil {
 		return -1, er0

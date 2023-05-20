@@ -2,7 +2,6 @@ package reaction
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -27,7 +26,6 @@ func (h *CommentReactionHandler) SetUseful(w http.ResponseWriter, r *http.Reques
 	commentId := GetRequiredParam(w, r, h.commentIdIndex)
 	author := GetRequiredParam(w, r, h.authorIndex)
 	userId := GetRequiredParam(w, r, h.userIdIndex)
-	fmt.Print(commentId, author, userId)
 	if len(commentId) == 0 || len(author) == 0 || len(userId) == 0 {
 		http.Error(w, "parameter is required", http.StatusBadRequest)
 		return

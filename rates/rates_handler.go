@@ -48,9 +48,7 @@ func (h *RatesHandler) Rate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		result, er3 := h.service.Rate(r.Context(), id, author, &req)
-		fmt.Println(result)
 		if er3 != nil {
-			fmt.Println("Error : " + er3.Error())
 			http.Error(w, er3.Error(), http.StatusInternalServerError)
 			return
 		}

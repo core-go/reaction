@@ -66,7 +66,6 @@ type responseService struct {
 func (s *responseService) Load(ctx context.Context, id string, author string) (*Response, error) {
 	query := fmt.Sprintf("select %s, %s, %s, %s, %s, %s, histories from %s where %s = $1 and %s = $2 limit 1",
 		s.IdCol, s.AuthorCol, s.DescriptionCol, s.TimeCol, s.UsefulCountCol, s.CommentCountCol, s.ResponseTable, s.IdCol, s.AuthorCol)
-	fmt.Println(query)
 	rows, err := s.DB.QueryContext(ctx, query, id, author)
 	if err != nil {
 		return nil, err
@@ -94,7 +93,6 @@ func (s *responseService) Response(ctx context.Context, response *Response) (int
 		query1 := fmt.Sprintf(
 			"insert into %s(%s, %s) values ($1, 1) on conflict (%s) do update set %s = %s.%s + 1",
 			s.InfoTable, s.InfoIdCol, s.ResponseCountCol, s.InfoIdCol, s.ResponseCountCol, s.InfoTable, s.ResponseCountCol)
-		fmt.Println(query1)
 		stmt1, err := s.DB.Prepare(query1)
 		if err != nil {
 			return -1, err
@@ -105,7 +103,6 @@ func (s *responseService) Response(ctx context.Context, response *Response) (int
 	query2 := fmt.Sprintf(
 		"insert into %s(%s, %s, %s, %s, histories) values ($1, $2, $3, $4, $5) on conflict (%s, %s) do update set %s = $3, %s = $4, histories = $5",
 		s.ResponseTable, s.IdCol, s.AuthorCol, s.DescriptionCol, s.TimeCol, s.IdCol, s.AuthorCol, s.DescriptionCol, s.TimeCol)
-	fmt.Println(query2)
 	stmt, err := s.DB.Prepare(query2)
 	if err != nil {
 		return -1, err

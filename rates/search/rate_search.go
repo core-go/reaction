@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
 	. "github.com/core-go/sql"
 	"reflect"
 )
@@ -60,7 +59,6 @@ func NewRateSearchService(Database *sql.DB,
 
 func (f *rateCommentSearchService) Search(ctx context.Context, rf *RateFilter) ([]Rates, int64, error) {
 	sql, params := f.BuildQuery(rf)
-	fmt.Print(sql, params)
 	rates := make([]Rates, 0)
 	if rf.Page == 0 {
 		rf.Page = 1
