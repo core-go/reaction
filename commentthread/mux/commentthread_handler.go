@@ -3,6 +3,7 @@ package mux
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/core-go/reaction/commentthread"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -84,7 +85,8 @@ func (h *CommentThreadHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	author := GetRequiredParam(w, r, 0)
-	commentId := GetRequiredParam(w, r)
+	commentId := GetRequiredParam(w, r, 1)
+	fmt.Print(author, commentId)
 	res, err1 := h.service.Update(r.Context(), commentId, author, comment)
 	if err1 != nil {
 		if res == -2 {
