@@ -19,9 +19,9 @@ type CommentThreadService interface {
 func NewCommentThreadService(
 	db *sql.DB,
 	toArray func(interface{}) interface {
-		driver.Valuer
-		sql.Scanner
-	},
+	driver.Valuer
+	sql.Scanner
+},
 	threadTable string,
 	commentIdThreadCol string,
 	idThreadCol string,
@@ -174,51 +174,59 @@ func (s *commentThreadService) Remove(ctx context.Context, commentId string, aut
 	}
 	rowResult += rowsAffected
 
-	qr2 := fmt.Sprintf("Delete from %s where %s = $1", s.threadReplyTable, s.commentThreadIdReplyCol)
-	res, err = tx.ExecContext(ctx, qr2, commentId)
-	if err != nil {
-		return -1, err
+	if len(s.threadReplyTable) > 0 && len(s.commentThreadIdReplyCol) > 0 {
+		qr2 := fmt.Sprintf("delete from %s where %s = $1", s.threadReplyTable, s.commentThreadIdReplyCol)
+		res, err = tx.ExecContext(ctx, qr2, commentId)
+		if err != nil {
+			return -1, err
+		}
+		rowsAffected, err = res.RowsAffected()
+		if err != nil {
+			return -1, err
+		}
+		rowResult += rowsAffected
 	}
-	rowsAffected, err = res.RowsAffected()
-	if err != nil {
-		return -1, err
-	}
-	rowResult += rowsAffected
 
-	qr3 := fmt.Sprintf("Delete from %s where %s = $1", s.threadInfoTable, s.commentIdthreadInfo)
-	res, err = tx.ExecContext(ctx, qr3, commentId)
-	if err != nil {
-		return -1, err
+	if len(s.threadInfoTable) > 0 && len(s.commentIdthreadInfo) > 0 {
+		qr3 := fmt.Sprintf("delete from %s where %s = $1", s.threadInfoTable, s.commentIdthreadInfo)
+		res, err = tx.ExecContext(ctx, qr3, commentId)
+		if err != nil {
+			return -1, err
+		}
+		rowsAffected, err = res.RowsAffected()
+		if err != nil {
+			return -1, err
+		}
+		rowResult += rowsAffected
 	}
-	rowsAffected, err = res.RowsAffected()
-	if err != nil {
-		return -1, err
-	}
-	rowResult += rowsAffected
-	idQr := fmt.Sprintf("select %s from %s where %s = $1", s.commentIdThreadReplyCol, s.threadReplyTable, s.commentThreadIdReplyCol)
-	rows, err := s.db.QueryContext(ctx, idQr, commentId)
-	if err != nil {
-		return -1, err
-	}
-	defer rows.Close()
-	var ids = []string{}
-	for rows.Next() {
-		var id string
-		rows.Scan(&id)
-		ids = append(ids, id)
-	}
-	qr4 := fmt.Sprintf("delete from %s a where a.%s = ANY($1)",
-		s.threadReplyInfoTable, s.commentIdThreadReplyInfoCol)
 
-	res, err = tx.ExecContext(ctx, qr4, s.toArray(ids))
-	if err != nil {
-		return -1, err
+	var ids []string
+	if len(s.commentIdThreadReplyCol) > 0 && len(s.threadReplyInfoTable) > 0 {
+		idQr := fmt.Sprintf("select %s from %s where %s = $1", s.commentIdThreadReplyCol, s.threadReplyTable, s.commentThreadIdReplyCol)
+		rows, err := s.db.QueryContext(ctx, idQr, commentId)
+		if err != nil {
+			return -1, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var id string
+			rows.Scan(&id)
+			ids = append(ids, id)
+		}
+		qr4 := fmt.Sprintf("delete from %s a where a.%s = ANY($1)",
+			s.threadReplyInfoTable, s.commentIdThreadReplyInfoCol)
+
+		res, err = tx.ExecContext(ctx, qr4, s.toArray(ids))
+		if err != nil {
+			return -1, err
+		}
+		rowsAffected, err = res.RowsAffected()
+		if err != nil {
+			return -1, err
+		}
+		rowResult += rowsAffected
 	}
-	rowsAffected, err = res.RowsAffected()
-	if err != nil {
-		return -1, err
-	}
-	rowResult += rowsAffected
+
 	if len(s.reactionTable) > 0 {
 		qr5 := fmt.Sprintf("delete from %s a where %s = $1",
 			s.reactionTable, s.commentIdReactionCol)
